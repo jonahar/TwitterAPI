@@ -50,12 +50,13 @@ class TwitterPager(object):
                 # yield each item in the page
                 id = None
                 for item in it:
-                    if 'id' in item:
-                        id = item['id']
-                    if 'code' in item:
-                        if item['code'] in [130, 131]:
-                            # Twitter service error
-                            raise TwitterConnectionError(item)
+                    if type(item) == dict:
+                        if 'id' in item:
+                            id = item['id']
+                        if 'code' in item:
+                            if item['code'] in [130, 131]:
+                                # Twitter service error
+                                raise TwitterConnectionError(item)
                     yield item
 
                 # if a cursor is present, use it to get next page
