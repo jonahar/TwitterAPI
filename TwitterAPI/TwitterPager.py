@@ -2,16 +2,16 @@ __author__ = "geduldig"
 __date__ = "June 8, 2013"
 __license__ = "MIT"
 
-
 from requests.exceptions import ConnectionError, ReadTimeout, SSLError
 from requests.packages.urllib3.exceptions import ReadTimeoutError, ProtocolError
 from .TwitterError import *
 import requests
 import time
 
+RATE_LIMIT_CODE = 88
+
 
 class TwitterPager(object):
-
     """Continuous (stream-like) pagination of response from Twitter REST API resource.
 
     :param api: An authenticated TwitterAPI object
@@ -24,12 +24,13 @@ class TwitterPager(object):
         self.resource = resource
         self.params = params
 
-    def get_iterator(self, wait=5, new_tweets=False):
+    def get_iterator(self, wait=0, new_tweets=False):
         """Iterate response from Twitter REST API resource. Resource is called
         in a loop to retrieve consecutive pages of results.
 
-        :param wait: Floating point number (default=5) of seconds wait between requests.
+        :param wait: Floating point number (default=0) of seconds wait between requests.
                      Depending on the resource, appropriate values are 5 or 60 seconds.
+                     UPDATE: the default was changed to 0 because the pager now handles rate limit
         :param new_tweets: Boolean determining the search direction.
                            False (default) retrieves old results.
                            True retrieves current results.
@@ -43,6 +44,18 @@ class TwitterPager(object):
                 # get one page of results
                 start = time.time()
                 r = self.api.request(self.resource, self.params)
+                json = r.json()
+
+                # if rate limit reached, go to sleep
+                if 'errors' in json and json['errors'][0]['code'] == RATE_LIMIT_CODE:
+                    reset = r.get_quota()['reset'] + 5  # plus 5 seconds just to be sure
+                    time_to_wait = max(int(reset - time.time()), 0)
+                    logging.info(
+                        'Rate limit reached for endpoint {0}. Going to sleep for {1} seconds'.format(
+                            self.resource, time_to_wait))
+                    time.sleep(time_to_wait)
+                    continue  # go to the beginning of the loop. try the request again
+
                 it = r.get_iterator()
                 if new_tweets:
                     it = reversed(list(it))
@@ -61,7 +74,6 @@ class TwitterPager(object):
 
                 # if a cursor is present, use it to get next page
                 # (otherwise, use id to get next page)
-                json = r.json()
                 cursor = -1
                 if new_tweets and 'previous_cursor' in json:
                     cursor = json['previous_cursor']

@@ -205,14 +205,10 @@ class TwitterResponse(object):
         :returns: Dictionary of 'remaining' (count), 'limit' (count), 'reset' (time)
         """
         remaining, limit, reset = None, None, None
-        if self.response:
-            if 'x-rate-limit-remaining' in self.response.headers:
-                remaining = int(
-                    self.response.headers['x-rate-limit-remaining'])
-                if remaining == 0:
-                    limit = int(self.response.headers['x-rate-limit-limit'])
-                    reset = int(self.response.headers['x-rate-limit-reset'])
-                    reset = datetime.fromtimestamp(reset)
+        if 'x-rate-limit-remaining' in self.response.headers:
+            remaining = int(self.response.headers['x-rate-limit-remaining'])
+            limit = int(self.response.headers['x-rate-limit-limit'])
+            reset = int(self.response.headers['x-rate-limit-reset'])
         return {'remaining': remaining, 'limit': limit, 'reset': reset}
 
     def close(self):
