@@ -2,7 +2,6 @@ __author__ = "geduldig"
 __date__ = "June 7, 2013"
 __license__ = "MIT"
 
-
 from .BearerAuth import BearerAuth as OAuth2
 from .constants import *
 from datetime import datetime
@@ -18,7 +17,6 @@ import time
 
 
 class TwitterAPI(object):
-
     """Access REST API or Streaming API resources.
 
     :param consumer_key: Twitter application consumer key
@@ -65,11 +63,11 @@ class TwitterAPI(object):
                                               CURATOR_VERSION,
                                               path)
         elif subdomain == 'ads-api':
-            return '%s://%s.%s/%s/%s'      % (PROTOCOL,
-                                              subdomain,
-                                              DOMAIN,
-                                              ADS_VERSION,
-                                              path)
+            return '%s://%s.%s/%s/%s' % (PROTOCOL,
+                                         subdomain,
+                                         DOMAIN,
+                                         ADS_VERSION,
+                                         path)
         else:
             return '%s://%s.%s/%s/%s.json' % (PROTOCOL,
                                               subdomain,
@@ -132,7 +130,7 @@ class TwitterAPI(object):
                     url,
                     data=data,
                     params=params,
-                    timeout=(CONNECTION_TIMEOUT,timeout),
+                    timeout=(CONNECTION_TIMEOUT, timeout),
                     files=files,
                     proxies=self.proxies)
             except (ConnectionError, ProtocolError, ReadTimeout, ReadTimeoutError,
@@ -142,14 +140,13 @@ class TwitterAPI(object):
 
 
 class TwitterResponse(object):
-
     """Response from either a REST API or Streaming API resource call.
 
     :param response: The requests.Response object returned by the API call
     :param stream: Boolean connection type (True if a streaming connection)
     """
 
-    def __init__(self, response, stream):
+    def __init__(self, response: requests.Session.request, stream: bool):
         self.response = response
         self.stream = stream
 
@@ -217,7 +214,6 @@ class TwitterResponse(object):
 
 
 class _RestIterable(object):
-
     """Iterate statuses, errors or other iterable objects in a REST API response.
 
     :param response: The request.Response from a Twitter REST API request
@@ -251,13 +247,12 @@ class _RestIterable(object):
 
 
 class _StreamingIterable(object):
-
     """Iterate statuses or other objects in a Streaming API response.
 
     :param response: The request.Response from a Twitter Streaming API request
     """
 
-    def __init__(self, response):
+    def __init__(self, response: requests.Session.request):
         self.stream = response.raw
 
     def _iter_stream(self):
@@ -290,6 +285,7 @@ class _StreamingIterable(object):
                             item = None
                             item = self.stream.read(nbytes)
                         break
+
                 yield item
             except (ConnectionError, ProtocolError, ReadTimeout, ReadTimeoutError,
                     SSLError, ssl.SSLError, socket.error) as e:
@@ -311,3 +307,7 @@ class _StreamingIterable(object):
                 except ValueError as e:
                     # invalid JSON string (possibly an unformatted error message)
                     raise TwitterConnectionError(e)
+            else:
+                # raise an empty result, so whoever is using this iterator will not wait
+                # indefinitely, and will have the chance to stop.
+                yield dict()
