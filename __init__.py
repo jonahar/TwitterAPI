@@ -13,7 +13,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
 try:
-    from .TwitterAPI import TwitterAPI, TwitterResponse
+    from TwitterAPI import TwitterAPI, TwitterResponse
     from .TwitterError import TwitterConnectionError, TwitterRequestError
     from .TwitterOAuth import TwitterOAuth
     from .TwitterPager import TwitterPager
